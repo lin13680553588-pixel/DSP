@@ -1,0 +1,57 @@
+name: Daily DSP to Feishu
+
+on:
+  schedule:
+    # 02:30 UTC = 10:30 China Standard Time (UTC+8).
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: Optional first report date (YYYY-MM-DD)
+        required: false
+        type: string
+      end_date:
+        description: Optional last report date (YYYY-MM-DD); defaults to start_date
+        required: false
+        type: string
+      write_feishu:
+        description: Write to Feishu. Leave false to validate a backfill safely.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsp-feishu-production
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AMAZON_TOKEN_ENDPOINT: ${{ secrets.AMAZON_TOKEN_ENDPOINT }}
+      AMAZON_ADS_CLIENT_ID: ${{ secrets.AMAZON_ADS_CLIENT_ID }}
+      FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+      FEISHU_WEBHOOK_TOKEN: ${{ secrets.FEISHU_WEBHOOK_TOKEN }}
+      DSP_ADVERTISER_NAME_PATTERN: ${{ vars.DSP_ADVERTISER_NAME_PATTERN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check syntax and pure transformations
+        run: |
+          node --check src/dsp_feishu_sync/core.mjs
+          node --check src/dsp_feishu_sync/main.mjs
+          node --test test/core.test.mjs
+      - name: Synchronize DSP report
+        shell: bash
+        run: |
+          args=()
+          if [ -n "${{ inputs.start_date }}" ]; then args+=(--start-date "${{ inputs.start_date }}"); fi
+          if [ -n "${{ inputs.end_date }}" ]; then args+=(--end-date "${{ inputs.end_date }}"); fi
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.write_feishu }}" = "true" ]; then args+=(--write-feishu); fi
+          node src/dsp_feishu_sync/main.mjs "${args[@]}"
