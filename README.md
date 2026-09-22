@@ -34,6 +34,11 @@
 3. 找到记录时更新 13 个展示字段；没有记录时新增。
 4. 不要让 Webhook 自动化再次触发同一个 GitHub 工作流。10:35 兜底若保留，只能由独立的飞书定时任务触发。
 
+## 原交接资料
+
+远端仓库原有的业务口径和运维说明已保留在根目录：
+[`PROJECT_MASTER.md`](PROJECT_MASTER.md)、[`HANDOFF_DSP_FEISHU.md`](HANDOFF_DSP_FEISHU.md)、[`CONTEXT.md`](CONTEXT.md)。如与当前代码冲突，以本 README 和 `src/dsp_feishu_sync/` 为准。
+
 ## 验证与上线
 
 ```bash
