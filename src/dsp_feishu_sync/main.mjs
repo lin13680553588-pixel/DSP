@@ -15,7 +15,8 @@ const integer = (name, fallback) => {
 };
 const redact = (value) => String(value ?? '')
   .replace(/Bearer\s+\S+/gi, 'Bearer <redacted>')
-  .replace(/Atza\|\S+/g, '<redacted>')
+  // Login with Amazon tokens may begin with Atza| (access) or Atzr| (refresh).
+  .replace(/Atz[A-Za-z0-9]*\|[A-Za-z0-9._~+/=-]+/g, '<redacted>')
   .replace(/https?:\/\/[^\s"']+/g, '<url>')
   .slice(0, 300);
 const log = (event, details = {}) => console.log(JSON.stringify({ event, ...details }));
